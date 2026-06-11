@@ -4,11 +4,11 @@ import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import morgan from "morgan";
 import { env } from "./config/env";
+import { ensureDatabaseConnection } from "./middleware/database";
 import authRoutes from "./routes/authRoutes";
 import reportRoutes from "./routes/reportRoutes";
 import transactionRoutes from "./routes/transactionRoutes";
 import userRoutes from "./routes/userRoutes";
-import { ensureDatabaseConnection } from "./middleware/database";
 import { errorHandler, notFound } from "./middleware/errorHandler";
 
 const app = express();
@@ -22,14 +22,19 @@ app.use(
   cors({
     origin(origin, callback) {
       if (!origin) return callback(null, true);
-      const localDevOrigin = /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin);
-      if (env.clientOrigins.includes(origin) || (env.nodeEnv !== "production" && localDevOrigin)) {
+      const localDevOrigin = /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(
+        origin,
+      );
+      if (
+        env.clientOrigins.includes(origin) ||
+        (env.nodeEnv !== "production" && localDevOrigin)
+      ) {
         return callback(null, true);
       }
       return callback(new Error(`CORS blocked origin: ${origin}`));
     },
-    credentials: true
-  })
+    credentials: true,
+  }),
 );
 app.use(express.json({ limit: "1mb" }));
 app.use(morgan(env.nodeEnv === "production" ? "combined" : "dev"));
@@ -38,8 +43,8 @@ app.use(
     windowMs: 15 * 60 * 1000,
     limit: 300,
     standardHeaders: true,
-    legacyHeaders: false
-  })
+    legacyHeaders: false,
+  }),
 );
 
 app.get("/", (_req, res) => res.json({ name: "LedgerPro API", status: "ok" }));

@@ -8,9 +8,14 @@ import authRoutes from "./routes/authRoutes";
 import reportRoutes from "./routes/reportRoutes";
 import transactionRoutes from "./routes/transactionRoutes";
 import userRoutes from "./routes/userRoutes";
+import { ensureDatabaseConnection } from "./middleware/database";
 import { errorHandler, notFound } from "./middleware/errorHandler";
 
 const app = express();
+
+if (env.nodeEnv === "production" || process.env.VERCEL === "1") {
+  app.set("trust proxy", 1);
+}
 
 app.use(helmet());
 app.use(
@@ -37,7 +42,10 @@ app.use(
   })
 );
 
+app.get("/", (_req, res) => res.json({ name: "LedgerPro API", status: "ok" }));
+app.get(["/favicon.ico", "/favicon.png"], (_req, res) => res.status(204).end());
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
+app.use("/api", ensureDatabaseConnection);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/transactions", transactionRoutes);
